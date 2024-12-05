@@ -1,6 +1,7 @@
 name: attendance
 
 on:
+  # 定时触发：每天 UTC 20:00 (北京时间次日凌晨 4:00)
   schedule:
     - cron: '0 20 * * *'
   workflow_dispatch:
@@ -9,8 +10,37 @@ jobs:
   attendance:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      # 检出含完整提交历史的代码以便检查
+      - name: Initial checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 检查 ACTION_COMMIT_VER 变量并验证提交是否存在
+      - name: Check commit version
+        id: check_commit
+        run: |
+          if [[ -n "${{ vars.ACTION_COMMIT_VER }}" ]]; then
+            git fetch --prune --unshallow || true
+            if git rev-parse --quiet --verify "${{ vars.ACTION_COMMIT_VER }}^{commit}" > /dev/null; then
+              echo "is_valid=true" >> $GITHUB_OUTPUT
+              echo "commit_hash=${{ vars.ACTION_COMMIT_VER }}" >> $GITHUB_OUTPUT
+              echo "Found valid commit: ${{ vars.ACTION_COMMIT_VER }}"
+            else
+              echo "is_valid=false" >> $GITHUB_OUTPUT
+              echo "Commit not found in repository"
+            fi
+          else
+            echo "is_valid=false" >> $GITHUB_OUTPUT
+            echo "No commit version specified"
+          fi
+
+      # 如果找到有效的提交，切换到该版本
+      - name: Checkout specific commit
+        if: steps.check_commit.outputs.is_valid == 'true'
+        run: |
+          git checkout ${{ steps.check_commit.outputs.commit_hash }}
+          echo "Switched to commit: $(git rev-parse HEAD)"
 
       - name: Install Node.js
         uses: actions/setup-node@v4
