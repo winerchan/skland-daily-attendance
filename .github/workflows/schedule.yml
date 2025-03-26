@@ -3,7 +3,7 @@ name: attendance
 on:
   # 定时触发：每天 UTC 20:00 (北京时间次日凌晨 4:00)
   schedule:
-    - cron: '0 20 * * *'
+    - cron: '0 16 * * *'
   workflow_dispatch:
 
 jobs:
@@ -45,7 +45,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18.18.2
+          node-version: 20.9.0
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -75,3 +75,4 @@ jobs:
           SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
           BARK_URL: ${{ secrets.BARK_URL }}
           SELECT_CHANNEL: ${{ secrets.SELECT_CHANNEL }}
+          MESSAGE_PUSHER_URL: ${{ secrets.MESSAGE_PUSHER_URL }}
